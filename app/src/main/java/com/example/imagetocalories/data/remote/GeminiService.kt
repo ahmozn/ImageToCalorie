@@ -4,8 +4,7 @@ package com.example.imagetocalories.data.remote
 import android.graphics.Bitmap
 import com.example.imagetocalories.BuildConfig
 import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.content
-import com.google.ai.client.generativeai.type.generationConfig
+import com.google.ai.client.generativeai.type.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -19,6 +18,15 @@ class GeminiService @Inject constructor() {
         apiKey = apiKey,
         generationConfig = generationConfig {
             responseMimeType = "application/json"
+        },
+        safetySettings = listOf(
+            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH),
+            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH),
+            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH),
+            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
+        ),
+        systemInstruction = content {
+            text("You are a specialized nutritional analysis AI. Your task is to analyze food images and provide accurate meal names, estimated weights in grams, and total calories in a structured JSON format.")
         }
     )
 

@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class MealEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val userId: Long,
     val mealName: String,
     val calories: Int,
     val weightGram: Int,

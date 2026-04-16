@@ -12,6 +12,7 @@ import com.example.imagetocalories.ui.viewmodel.CameraViewModel
 @Composable
 fun ResultScreen(
     viewModel: CameraViewModel,
+    userId: Long,
     onBackToCamera: () -> Unit
 ) {
     val result by viewModel.analysisResult.collectAsState()
@@ -56,8 +57,23 @@ fun ResultScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(onClick = onBackToCamera) {
-                Text("Yeni Fotoğraf Çek")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+            ) {
+                OutlinedButton(
+                    onClick = onBackToCamera,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Yeni Fotoğraf")
+                }
+
+                Button(
+                    onClick = { viewModel.confirmAndSave(userId) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Onayla")
+                }
             }
         } else {
             // Eğer veri yoksa (hata veya henüz bitmediyse)

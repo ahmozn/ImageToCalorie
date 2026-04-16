@@ -1,5 +1,6 @@
 package com.example.imagetocalories.ui.screens
 
+import android.graphics.Matrix
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
@@ -21,12 +22,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.imagetocalories.ui.viewmodel.AuthViewModel
 import com.example.imagetocalories.ui.viewmodel.CameraViewModel
 
 @Composable
-fun CameraScreen(viewModel: CameraViewModel = hiltViewModel()) {
+fun CameraScreen(
+    viewModel: CameraViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val result by viewModel.analysisResult.collectAsState()
+    val currentUser by authViewModel.currentUser.collectAsState(initial = null)
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraController = remember {
         LifecycleCameraController(context).apply {
@@ -73,8 +79,12 @@ fun CameraScreen(viewModel: CameraViewModel = hiltViewModel()) {
             }
         }
     }else {
-        ResultScreen(viewModel=viewModel) {
-            viewModel.resetResult()
+        currentUser?.id?.let { userId ->
+            ResultScreen(
+                viewModel = viewModel,
+                userId = userId,
+                onBackToCamera = { viewModel.resetResult() }
+            )
         }
     }
 
@@ -91,15 +101,33 @@ private fun takePhoto(
             override fun onCaptureSuccess(image: androidx.camera.core.ImageProxy) {
                 super.onCaptureSuccess(image)
 
-                // 1. ImageProxy -> Bitmap çevrimi
-                val bitmap = image.toBitmap()
+                // 1. ImageProxy -> Bitmap çevrimi ve rotasyon düzeltme
+                val originalBitmap = image.toBitmap()
+                val rotationDegrees = image.imageInfo.rotationDegrees.toFloat()
 
-                // 2. Geçici bir dosya yolu oluştur (DB için lazım)
-                val path = "${context.cacheDir}/meal_${System.currentTimeMillis()}.jpg"
+                val matrix = Matrix().apply {
+                    postRotate(rotationDegrees)
+                }
 
-                // TODO: Bitmap'i bu path'e kaydetme kodu buraya gelebilir (opsiyonel)
+                val rotatedBitmap = android.graphics.Bitmap.createBitmap(
+                    originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true
+                )
 
-                onPhotoCaptured(bitmap, path)
+                // 2. Kalıcı bir dosya yolu oluştur (Dosyalar klasörü)
+                val file = java.io.File(context.filesDir, "meal_${System.currentTimeMillis()}.jpg")
+                val path = file.absolutePath
+
+                // 3. Bitmap'i dosyaya kaydet
+                try {
+                    val out = java.io.FileOutputStream(file)
+                    rotatedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+                    out.flush()
+                    out.close()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                onPhotoCaptured(rotatedBitmap, path)
                 image.close() // Bellek sızıntısı olmasın diye kapatıyoruz
             }
 

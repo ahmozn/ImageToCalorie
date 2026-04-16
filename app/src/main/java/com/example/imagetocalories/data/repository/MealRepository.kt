@@ -12,6 +12,7 @@ class MealRepository @Inject constructor(
 ) {
     // Veritabanı işlemleri
     fun getAllMeals() = mealDao.getAllMeals()
+    fun getMealsByUserId(userId: Long) = mealDao.getMealsByUserId(userId)
     suspend fun insertMeal(meal: MealEntity) = mealDao.insertMeal(meal)
 
     // Gemini Analizi

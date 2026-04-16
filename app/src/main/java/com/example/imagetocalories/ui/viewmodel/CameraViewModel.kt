@@ -23,24 +23,35 @@ class CameraViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private var lastImagePath: String? = null
+
     fun analyzeAndSaveImage(bitmap: Bitmap, imagePath: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            lastImagePath = imagePath
             val result = repository.analyzeImage(bitmap)
+            _analysisResult.value = result
+            _isLoading.value = false
+        }
+    }
 
-            result?.let {
-                _analysisResult.value = it
-                //Gemini'den veri gelince DB'ye kaydediyoruz
+    fun confirmAndSave(userId: Long) {
+        val result = _analysisResult.value
+        val path = lastImagePath
+
+        if (result != null && path != null) {
+            viewModelScope.launch {
                 repository.insertMeal(
                     MealEntity(
-                        mealName = it.mealName,
-                        calories = it.calories,
-                        weightGram = it.weightGram,
-                        imagePath = imagePath
+                        userId = userId,
+                        mealName = result.mealName,
+                        calories = result.calories,
+                        weightGram = result.weightGram,
+                        imagePath = path
                     )
                 )
+                resetResult()
             }
-            _isLoading.value = false
         }
     }
 

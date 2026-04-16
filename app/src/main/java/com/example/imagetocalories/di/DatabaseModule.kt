@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.example.imagetocalories.data.local.AppDatabase
 import com.example.imagetocalories.data.local.MealDao
+import com.example.imagetocalories.data.local.UserDao
+import com.example.imagetocalories.data.local.WeightDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,12 +24,25 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "calorie_db"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
     @Singleton
     fun provideMealDao(database: AppDatabase): MealDao {
         return database.mealDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserDao(database: AppDatabase): UserDao {
+        return database.userDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWeightDao(database: AppDatabase): WeightDao {
+        return database.weightDao()
     }
 }
